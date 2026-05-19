@@ -1,0 +1,9 @@
+{
+  "name": "reverse-mafia",
+  "version": "1.0.0",
+  "description": "Pass the Turing Test — social deduction game with AI",
+  "scripts": {
+    "start": "bash start.sh",
+    "test": "cd backend && npm test"
+  }
+}

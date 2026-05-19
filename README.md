@@ -98,66 +98,31 @@ After the reveal, the host can start a new round. The room resets — new roles,
 
 ## Running the Game
 
-There are **3 pieces** to run for a full session:
+### One command
 
-```
-Ollama (port 11434)   ← local LLM
-Backend (port 3000)   ← Express + Socket.io + bot (runs together)
-Frontend              ← index.html opened in the browser
+```bash
+npm start
 ```
 
-The bot is **not a separate service** — it runs inside the backend automatically.
+That's it. The script will:
+1. Install backend dependencies if needed
+2. Start Ollama and pull the model if not already downloaded
+3. Start the backend on port 3000
+4. Open `frontend/index.html` in your browser automatically
+
+To simulate multiple players, open `frontend/index.html` in **multiple tabs or browsers**.
 
 ---
 
-### Step 1 — Ollama (skip if you have an Anthropic API key)
+### Optional — Anthropic API key (skip if using Ollama)
+
+If you have an Anthropic API key and want to use it instead of Ollama:
 
 ```bash
-# First time: download the model (~2 GB)
-ollama pull llama3.2:3b
-
-# Then leave this running in its own terminal:
-ollama serve
+cp backend/.env.example backend/.env
+# Edit backend/.env and add your ANTHROPIC_API_KEY
+npm start
 ```
-
-If you have an Anthropic API key, Ollama is not needed — the backend detects the key and uses it automatically.
-
----
-
-### Step 2 — Backend
-
-```bash
-cd backend
-
-# First time:
-npm install
-
-# Configure your API key (optional — only if using Anthropic):
-cp .env.example .env
-# Edit .env and add your ANTHROPIC_API_KEY
-
-# Start:
-npm run dev
-```
-
-You should see:
-
-```
-Server running on http://localhost:3000
-[claude-bot] started — AI backend: ollama
-```
-
----
-
-### Step 3 — Frontend
-
-Just open the file in a browser — no build step needed:
-
-```bash
-open frontend/index.html
-```
-
-To simulate multiple players, open the same file in **multiple tabs or browsers**.
 
 ---
 
