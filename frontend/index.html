@@ -1,0 +1,1034 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TERMINAL_VOX — PASS THE TURING TEST</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Inter:wght@400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "surface-tint":"#00dbe7","inverse-primary":"#00696f","inverse-surface":"#e5e2e1",
+            "secondary-fixed":"#ffdad8","primary-container":"#00f2ff","primary":"#e1fdff",
+            "surface-container-highest":"#353534","secondary":"#ffb3b2","on-surface":"#e5e2e1",
+            "on-primary-fixed-variant":"#004f54","surface-dim":"#131313","on-tertiary-container":"#725e00",
+            "outline":"#849495","tertiary-fixed":"#ffe173","surface-container-high":"#2a2a2a",
+            "on-tertiary-fixed-variant":"#554500","surface-container-lowest":"#0e0e0e","on-error":"#690005",
+            "on-secondary-container":"#5b000f","surface-container-low":"#1c1b1b","error-container":"#93000a",
+            "surface-variant":"#353534","tertiary":"#fff6e4","on-surface-variant":"#b9cacb",
+            "tertiary-container":"#fed83a","error":"#ffb4ab","secondary-fixed-dim":"#ffb3b2",
+            "on-primary":"#00363a","primary-fixed":"#74f5ff","on-secondary":"#680012",
+            "on-primary-fixed":"#002022","on-secondary-fixed":"#410008","surface":"#131313",
+            "on-primary-container":"#006a71","surface-bright":"#3a3939","secondary-container":"#ff525c",
+            "on-background":"#e5e2e1","on-tertiary-fixed":"#221b00","background":"#131313",
+            "tertiary-fixed-dim":"#e8c423","outline-variant":"#3a494b","inverse-on-surface":"#313030",
+            "on-error-container":"#ffdad6","on-tertiary":"#3b2f00","surface-container":"#201f1f",
+            "primary-fixed-dim":"#00dbe7","on-secondary-fixed-variant":"#92001e"
+          },
+          borderRadius: { "DEFAULT":"0.25rem","lg":"0.5rem","xl":"0.75rem","full":"9999px" },
+          spacing: { "margin-mobile":"12px","gutter":"16px","margin-desktop":"32px","container-max":"1280px","unit":"4px" },
+          fontFamily: {
+            "label-mono":["JetBrains Mono"],"headline-md":["JetBrains Mono"],
+            "terminal-sm":["JetBrains Mono"],"body-rt":["Inter"],"display-lg":["JetBrains Mono"]
+          },
+          fontSize: {
+            "label-mono":["12px",{lineHeight:"1.0",letterSpacing:"0.1em",fontWeight:"500"}],
+            "headline-md":["24px",{lineHeight:"1.2",letterSpacing:"0.02em",fontWeight:"700"}],
+            "terminal-sm":["14px",{lineHeight:"1.4",letterSpacing:"0em",fontWeight:"400"}],
+            "body-rt":["16px",{lineHeight:"1.5",letterSpacing:"0.01em",fontWeight:"400"}],
+            "display-lg":["48px",{lineHeight:"1.1",letterSpacing:"-0.05em",fontWeight:"800"}]
+          },
+          animation: {
+            'flicker':'flicker 3s linear infinite',
+            'glitch':'glitch 1s linear infinite',
+            'pulse-glow':'pulse-glow 2s cubic-bezier(0.4,0,0.6,1) infinite',
+            'blink':'blink 1s step-end infinite',
+          },
+          keyframes: {
+            flicker: {
+              '0%,19.999%,22%,62.999%,64%,64.999%,70%,100%':{opacity:'0.99'},
+              '20%,21.999%,63%,63.999%,65%,69.999%':{opacity:'0.4'},
+            },
+            glitch: {
+              '2%,64%':{transform:'translate(2px,0) skew(0deg)'},
+              '4%,60%':{transform:'translate(-2px,0) skew(0deg)'},
+              '62%':{transform:'translate(0,0) skew(5deg)'},
+            },
+            'pulse-glow': {
+              '0%,100%':{opacity:'1',boxShadow:'0 0 10px #00f2ff,0 0 20px #00f2ff'},
+              '50%':{opacity:'.7',boxShadow:'0 0 5px #00f2ff'},
+            },
+            blink: {'0%,100%':{opacity:'1'},'50%':{opacity:'0'}},
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { background-color: #050505; color: #e5e2e1; overflow-x: hidden; }
+
+    .scanlines {
+      background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0.2));
+      background-size: 100% 4px; pointer-events: none;
+    }
+    .crt-overlay {
+      background: radial-gradient(circle, rgba(0,0,0,0) 60%, rgba(0,0,0,0.8) 100%);
+      pointer-events: none;
+    }
+    .cyber-panel { background-color: #121212; border: 1px solid #3a494b; }
+    .cyber-input {
+      background: transparent; border: none;
+      border-bottom: 1px solid #00dbe7; color: #e1fdff;
+      outline: none; width: 100%; padding-bottom: 4px;
+    }
+    .cyber-input:focus { border-bottom-color: #00f2ff; box-shadow: 0 2px 8px rgba(0,219,231,0.2); }
+    .cyber-input::placeholder { color: #849495; font-size: 12px; }
+
+    .glitch-text { position: relative; }
+    .glitch-text::before, .glitch-text::after {
+      content: attr(data-text); position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%; opacity: 0.8;
+    }
+    .glitch-text::before {
+      left: 2px; text-shadow: -2px 0 #ff525c;
+      animation: glitch-anim-1 2s infinite linear alternate-reverse;
+    }
+    .glitch-text::after {
+      left: -2px; text-shadow: 2px 0 #00f2ff;
+      animation: glitch-anim-2 3s infinite linear alternate-reverse;
+    }
+    @keyframes glitch-anim-1 {
+      0%{clip-path:inset(20% 0 80% 0)} 20%{clip-path:inset(60% 0 10% 0)}
+      40%{clip-path:inset(40% 0 50% 0)} 60%{clip-path:inset(80% 0 5% 0)}
+      80%{clip-path:inset(10% 0 70% 0)} 100%{clip-path:inset(30% 0 20% 0)}
+    }
+    @keyframes glitch-anim-2 {
+      0%{clip-path:inset(10% 0 60% 0)} 20%{clip-path:inset(30% 0 20% 0)}
+      40%{clip-path:inset(70% 0 10% 0)} 60%{clip-path:inset(20% 0 50% 0)}
+      80%{clip-path:inset(50% 0 30% 0)} 100%{clip-path:inset(5% 0 80% 0)}
+    }
+
+    .pulse-shadow { animation: pulse-border 2s infinite; }
+    @keyframes pulse-border {
+      0%{box-shadow:0 0 0 0 rgba(0,242,255,0.4)}
+      70%{box-shadow:0 0 0 6px rgba(0,242,255,0)}
+      100%{box-shadow:0 0 0 0 rgba(0,242,255,0)}
+    }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #050505; }
+    ::-webkit-scrollbar-thumb { background: #3a494b; }
+    ::-webkit-scrollbar-thumb:hover { background: #00dbe7; }
+
+    /* Screen system */
+    .screen { display: none; position: fixed; top: 4rem; left: 0; right: 0; bottom: 0; overflow-y: auto; }
+    .screen.active { display: block; }
+    @media (min-width: 768px) { .screen { left: 16rem; } }
+    @media (max-width: 767px) { .screen { bottom: 4rem; } }
+
+    /* Role reveal: truly full screen */
+    #screen-role.active { top: 0; left: 0; z-index: 200; overflow-y: auto; }
+
+    /* Chat: no outer scroll, inner handles it */
+    #screen-chat.active { overflow: hidden; display: flex; }
+
+    /* Verdict states */
+    .verdict-card { transition: all 0.5s ease; }
+    .verdict-human { border-color: #4ade80 !important; }
+    .verdict-human .v-label { color: #4ade80; }
+    .verdict-ai { border-color: #ffb4ab !important; box-shadow: 0 0 16px rgba(255,82,92,0.4); }
+    .verdict-ai .v-label { color: #ffb4ab; }
+    .verdict-robot { border-color: #fed83a !important; box-shadow: 0 0 12px rgba(254,216,58,0.3); }
+    .verdict-robot .v-label { color: #fed83a; }
+
+    /* Vote card selected */
+    .vote-card.selected { border-color: #00f2ff !important; box-shadow: 0 0 16px rgba(0,242,255,0.4), inset 0 0 20px rgba(0,242,255,0.1); }
+    .vote-card.selected .subj-id { color: #00f2ff; }
+  </style>
+</head>
+<body class="antialiased font-body-rt">
+
+  <!-- Overlays -->
+  <div class="scanlines fixed inset-0 z-[100]"></div>
+  <div class="crt-overlay fixed inset-0 z-[99]"></div>
+
+  <!-- Error Banner -->
+  <div id="error-banner" class="hidden fixed top-16 left-0 right-0 z-[150] bg-error-container text-on-error-container px-4 py-2 flex items-center gap-3 font-label-mono text-label-mono border-b border-error md:left-64">
+    <span class="material-symbols-outlined text-sm">warning</span>
+    <span id="error-msg">Error</span>
+    <button onclick="document.getElementById('error-banner').classList.add('hidden')" class="ml-auto opacity-70 hover:opacity-100">✕</button>
+  </div>
+
+  <!-- ── HEADER ── -->
+  <header class="fixed top-0 w-full h-16 bg-surface/90 backdrop-blur-md border-b border-outline-variant shadow-[0_0_8px_rgba(0,219,231,0.3)] flex justify-between items-center px-3 md:px-8 z-[110]">
+    <div class="font-display-lg text-primary-fixed-dim tracking-tighter italic animate-pulse" style="font-size:clamp(20px,4vw,40px)">TERMINAL_VOX</div>
+    <div class="flex items-center gap-3">
+      <div id="header-timer" class="hidden items-center gap-2 text-error font-label-mono bg-error/10 px-3 py-1 border border-error/50">
+        <span class="material-symbols-outlined text-base animate-pulse">timer</span>
+        <span id="header-timer-val" class="tracking-widest text-sm">04:00</span>
+      </div>
+      <span class="material-symbols-outlined text-primary-fixed-dim/60 text-sm">warning</span>
+    </div>
+  </header>
+
+  <!-- ── SIDEBAR (desktop) ── -->
+  <nav class="hidden md:flex flex-col fixed left-0 top-16 w-64 bottom-0 bg-surface-container-low border-r border-outline-variant z-[105] pt-4 pb-4">
+    <div class="px-4 pb-4 border-b border-outline-variant mb-3">
+      <div id="sb-name" class="font-headline-md text-headline-md text-primary truncate">NODE_??</div>
+      <div id="sb-status" class="text-error text-[10px] tracking-widest mt-1">STATUS: STANDBY</div>
+    </div>
+    <div class="flex-1 flex flex-col gap-1 px-2 font-label-mono text-label-mono">
+      <div class="flex items-center gap-3 px-3 py-2 text-on-surface-variant">
+        <span class="material-symbols-outlined text-sm">terminal</span>SESSION LOGS
+      </div>
+      <div class="flex items-center gap-3 px-3 py-2 text-on-surface-variant">
+        <span class="material-symbols-outlined text-sm">groups</span>
+        <span id="sb-count">0 / 5 NODES</span>
+      </div>
+      <div id="sb-live" class="hidden items-center gap-3 px-3 py-2 text-primary-container bg-primary/10 border-l-2 border-primary-container">
+        <span class="material-symbols-outlined text-sm">psychology</span>EVALUATION LIVE
+      </div>
+    </div>
+    <div class="px-4 mt-auto">
+      <button onclick="handleAbort()" class="w-full py-2 border border-outline-variant text-on-surface-variant hover:border-error hover:text-error transition-colors font-label-mono text-label-mono flex items-center justify-center gap-2">
+        <span class="material-symbols-outlined text-sm">close</span>ABORT SESSION
+      </button>
+    </div>
+  </nav>
+
+  <!-- ══════════════════════════════════════
+       SCREEN 1 — LANDING
+  ══════════════════════════════════════ -->
+  <div id="screen-landing" class="screen active">
+    <div class="min-h-full p-3 md:p-8 flex flex-col md:flex-row gap-4">
+
+      <!-- Left: identity -->
+      <div class="flex-1 flex flex-col gap-4">
+        <div class="cyber-panel p-5 md:p-8 flex flex-col gap-4 relative overflow-hidden">
+          <div class="absolute top-0 right-0 p-2 font-label-mono text-label-mono text-outline-variant/50 text-[10px]">SYS.LBY.01</div>
+          <h1 class="font-display-lg text-primary animate-flicker uppercase leading-none tracking-tighter" style="font-size:clamp(32px,6vw,64px)">
+            PASS THE <br><span class="text-error animate-glitch inline-block">TURING TEST</span>
+          </h1>
+          <p class="font-terminal-sm text-terminal-sm text-on-surface-variant tracking-widest uppercase">Everyone is a suspect. Even you.</p>
+          <div class="w-full h-px bg-outline-variant my-2"></div>
+
+          <div class="flex flex-col gap-2">
+            <label class="font-label-mono text-label-mono text-primary-fixed-dim">AGENT ALIAS:</label>
+            <div class="flex items-end gap-2 relative">
+              <span class="font-terminal-sm text-outline">&gt;</span>
+              <input id="name-input" class="cyber-input font-terminal-sm text-terminal-sm uppercase"
+                type="text" placeholder="ENTER ALIAS..." maxlength="16" spellcheck="false" autocomplete="off">
+              <div class="w-2 h-4 bg-primary-container animate-blink absolute right-0 bottom-1"></div>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 text-[11px]">
+            <span class="font-label-mono text-label-mono text-on-surface-variant">SUBJECTS CONFIRMED:</span>
+            <span id="player-count" class="font-label-mono text-label-mono text-primary-fixed-dim">0 OF 5</span>
+          </div>
+
+          <button id="join-btn" onclick="handleJoin()"
+            class="mt-2 w-full py-3 font-label-mono text-label-mono uppercase bg-primary-fixed-dim text-on-primary-fixed-variant hover:bg-primary-container transition-all font-bold shadow-[0_0_8px_rgba(0,219,231,0.3)] active:translate-y-0.5 flex items-center justify-center gap-2">
+            <span class="material-symbols-outlined text-sm">login</span>INITIATE LINK
+          </button>
+          <p class="font-label-mono text-[10px] text-outline tracking-wider">THIS SESSION IS MONITORED. ALL RESPONSES ARE RECORDED.</p>
+        </div>
+      </div>
+
+      <!-- Right: connection logs -->
+      <div class="flex-1 md:max-w-sm">
+        <div class="cyber-panel h-full flex flex-col min-h-[280px]">
+          <div class="p-2 border-b border-outline-variant bg-surface-container-high flex justify-between items-center">
+            <span class="font-label-mono text-label-mono text-primary-fixed-dim">ACTIVE NODES</span>
+            <span id="landing-count" class="font-label-mono text-label-mono text-outline">0 / 5</span>
+          </div>
+          <div id="landing-logs" class="flex-1 p-4 font-terminal-sm text-terminal-sm text-on-surface-variant flex flex-col gap-2 overflow-y-auto">
+            <div class="flex gap-2 opacity-50">
+              <span class="text-outline">[SYS]</span><span>&gt; SESSION_INITIALIZED</span>
+            </div>
+            <div class="mt-auto flex gap-2 items-center pt-4">
+              <span class="text-primary-fixed-dim animate-pulse">&gt; AWAITING NODE CONNECTIONS</span>
+              <span class="animate-blink">_</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       SCREEN 1B — WAITING
+  ══════════════════════════════════════ -->
+  <div id="screen-waiting" class="screen">
+    <div class="min-h-full p-3 md:p-8 flex flex-col gap-4">
+      <div class="cyber-panel p-5 md:p-8 flex flex-col gap-5">
+        <div class="flex justify-between items-start flex-wrap gap-3">
+          <div>
+            <h2 class="font-headline-md text-headline-md text-primary-fixed-dim uppercase tracking-widest">AWAITING OTHER SUBJECTS</h2>
+            <p class="font-label-mono text-label-mono text-on-surface-variant mt-1">DO NOT CLOSE THIS WINDOW</p>
+          </div>
+          <div class="flex items-center gap-2 font-label-mono text-label-mono text-primary-fixed-dim border border-outline-variant px-3 py-1 bg-surface-container">
+            <div class="w-2 h-2 bg-primary-container rounded-full animate-pulse shadow-[0_0_5px_#00f2ff]"></div>
+            <span id="waiting-count">1 CONNECTED</span>
+          </div>
+        </div>
+
+        <div class="w-full h-px bg-outline-variant"></div>
+
+        <div id="waiting-list" class="flex flex-col gap-1 font-terminal-sm text-terminal-sm min-h-[160px]"></div>
+
+        <div class="w-full h-px bg-outline-variant"></div>
+
+        <div class="flex flex-col gap-2">
+          <button id="start-game-btn" onclick="handleStartGame()"
+            class="w-full py-4 font-headline-md text-headline-md uppercase bg-primary-container text-on-primary-container hover:bg-primary-fixed transition-colors active:scale-[0.98] animate-pulse-glow">
+            START EVALUATION
+          </button>
+          <p id="start-warn" class="text-center font-label-mono text-[10px] text-error tracking-widest">WARNING: MINIMUM 2 NODES REQUIRED</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       SCREEN 2 — ROLE REVEAL
+  ══════════════════════════════════════ -->
+  <div id="screen-role" class="screen">
+    <div id="role-bg" class="min-h-full flex flex-col items-center justify-center p-4 relative pb-20">
+
+      <!-- Countdown footer -->
+      <div id="role-countdown-bar" class="fixed bottom-0 w-full bg-error-container text-on-error-container py-3 px-4 text-center border-t border-error shadow-[0_0_15px_rgba(255,82,92,0.4)] z-50">
+        <p class="font-headline-md text-headline-md uppercase text-sm">
+          BRIEFING EXPIRES IN: <span id="role-countdown" class="text-error font-bold ml-2">5</span>s
+        </p>
+      </div>
+
+      <!-- Classification badge -->
+      <div class="absolute top-4 right-4 border border-outline-variant px-2 py-1 bg-surface-container-low flex items-center gap-2">
+        <div id="role-dot" class="w-2 h-2 rounded-full animate-pulse bg-primary-fixed shadow-[0_0_8px_#00f2ff]"></div>
+        <span class="font-label-mono text-label-mono text-primary-fixed text-[10px]">CLASSIFIED // EYES ONLY</span>
+      </div>
+
+      <div class="max-w-lg w-full text-center flex flex-col gap-6">
+        <span id="role-icon" class="material-symbols-outlined text-6xl block text-primary-fixed shadow-[0_0_20px_rgba(0,242,255,0.5)]" style="font-variation-settings:'FILL' 1;">android</span>
+
+        <h1 id="role-title" class="font-display-lg text-display-lg tracking-tighter italic uppercase glitch-text text-primary-fixed" data-text="LOADING..." style="font-size:clamp(28px,6vw,56px)">
+          LOADING...
+        </h1>
+
+        <div id="role-text-wrap" class="border-t border-b border-primary-container/30 py-4 px-4 bg-primary/5">
+          <p id="role-text" class="font-terminal-sm text-terminal-sm text-primary-fixed-dim leading-relaxed"></p>
+        </div>
+
+        <div id="role-redacted" class="hidden font-label-mono text-label-mono text-outline tracking-widest">[ BRIEFING REDACTED ]</div>
+
+        <button id="ready-btn" onclick="handleReady()"
+          class="w-full py-4 font-headline-md text-headline-md uppercase bg-primary-fixed-dim text-on-primary-fixed-variant hover:bg-primary-container transition-all font-bold shadow-[0_0_8px_rgba(0,219,231,0.3)] active:translate-y-0.5">
+          ACKNOWLEDGED
+        </button>
+        <p class="font-label-mono text-[10px] text-outline tracking-wider">
+          MEMO REF: SESSION-<span id="role-session-id">???</span> // DO NOT SHARE
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       SCREEN 3 — CHAT
+  ══════════════════════════════════════ -->
+  <div id="screen-chat" class="screen">
+
+    <!-- Player sidebar -->
+    <aside id="player-sidebar" class="hidden md:flex w-56 shrink-0 flex-col bg-surface-dim border-r border-outline-variant overflow-y-auto">
+      <div class="p-3 border-b border-outline-variant bg-surface-container-high sticky top-0">
+        <h2 class="font-headline-md text-headline-md text-primary-fixed text-sm">ACTIVE_NODES</h2>
+        <div class="font-label-mono text-[10px] text-on-surface-variant mt-1">SUSPICION METRICS</div>
+      </div>
+      <div id="player-sidebar-list" class="flex-1 p-2 space-y-1"></div>
+    </aside>
+
+    <!-- Chat area -->
+    <section class="flex-1 flex flex-col min-w-0">
+
+      <!-- Prompt/timer header -->
+      <div class="border-b border-outline-variant bg-surface-container-low p-3 shrink-0 shadow-[0_2px_8px_rgba(0,0,0,0.5)]">
+        <div class="flex justify-between items-end gap-4">
+          <div class="flex-1 min-w-0">
+            <div class="font-label-mono text-[10px] text-error animate-pulse">INQUIRY DIRECTIVE:</div>
+            <div id="game-prompt" class="font-headline-md text-on-surface mt-1 text-sm md:text-xl truncate">"Loading..."</div>
+          </div>
+          <div class="shrink-0 text-right">
+            <div class="font-label-mono text-[10px] text-on-surface-variant">TIME REMAINING</div>
+            <div id="chat-timer" class="font-terminal-sm text-error font-bold tracking-widest">04:00</div>
+          </div>
+        </div>
+        <div class="w-full h-px bg-surface-container-highest mt-2 relative overflow-hidden">
+          <div id="chat-timer-bar" class="absolute top-0 right-0 h-full bg-error transition-all duration-1000" style="width:100%"></div>
+        </div>
+      </div>
+
+      <!-- Messages -->
+      <div id="message-list" class="flex-1 overflow-y-auto p-3 md:p-4 space-y-2">
+        <div class="text-center py-4 border-y border-outline-variant border-dashed opacity-60">
+          <span class="font-label-mono text-[10px] text-primary-fixed-dim bg-surface px-2">--- SESSION SECURE. PROBE INITIATED. ---</span>
+        </div>
+      </div>
+
+      <!-- Input -->
+      <div class="border-t border-outline-variant bg-surface-container-low p-3 shrink-0">
+        <div class="flex gap-2 items-center bg-surface-dim border border-outline p-2 focus-within:border-primary-container focus-within:shadow-[0_0_8px_rgba(0,242,255,0.4)] transition-all">
+          <span class="font-terminal-sm text-primary-fixed-dim font-bold pl-1">&gt;</span>
+          <input id="chat-input" type="text" autocomplete="off"
+            class="flex-1 bg-transparent border-none text-on-surface font-terminal-sm text-sm focus:ring-0 outline-none placeholder:text-on-surface-variant/50"
+            placeholder="Input response...">
+          <button id="send-btn" onclick="handleSend()"
+            class="bg-primary-container text-on-primary-container font-label-mono text-label-mono px-3 py-2 hover:bg-primary transition-colors flex items-center gap-1 pulse-shadow shrink-0">
+            TRANSMIT <span class="material-symbols-outlined text-sm" style="font-variation-settings:'FILL' 1;">send</span>
+          </button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       SCREEN 4 — VOTE
+  ══════════════════════════════════════ -->
+  <div id="screen-vote" class="screen">
+    <div class="min-h-full p-3 md:p-8 flex flex-col gap-4 pb-28">
+
+      <div class="w-full bg-error text-on-error border border-on-error p-3 flex items-center justify-between shadow-[0_0_15px_rgba(255,82,92,0.3)]">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-sm" style="font-variation-settings:'FILL' 1;">warning</span>
+          <span class="font-headline-md text-xs md:text-sm tracking-widest uppercase">IDENTIFY THE NON-HUMAN SUBJECT</span>
+        </div>
+        <span class="font-label-mono text-[10px] opacity-80">PHASE: VOTE</span>
+      </div>
+
+      <div class="flex justify-between items-end border-b border-outline-variant pb-2">
+        <h2 class="font-headline-md text-primary glitch-text text-sm md:text-xl" data-text="SELECT_SUBJECT">SELECT_SUBJECT</h2>
+        <div class="flex items-center gap-2">
+          <span class="font-label-mono text-[10px] text-on-surface-variant">ASSESSMENT WINDOW:</span>
+          <span id="vote-timer" class="font-terminal-sm text-error font-bold tracking-widest">00:30</span>
+        </div>
+      </div>
+
+      <div id="vote-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3"></div>
+    </div>
+
+    <!-- Sticky submit -->
+    <div class="fixed bottom-0 left-0 right-0 md:left-64 p-4 bg-gradient-to-t from-surface-container-highest via-surface/95 to-transparent z-10 flex justify-end">
+      <button id="vote-btn" onclick="handleVote()" disabled
+        class="bg-primary-container text-on-primary-container font-headline-md text-sm md:text-base px-6 md:px-8 py-3 md:py-4 border border-primary hover:bg-primary transition-all shadow-[0_0_15px_rgba(0,242,255,0.5)] active:translate-y-1 disabled:opacity-40 disabled:cursor-not-allowed">
+        CONFIRM_VOTE
+      </button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       SCREEN 5 — REVEAL
+  ══════════════════════════════════════ -->
+  <div id="screen-reveal" class="screen">
+    <div class="min-h-full p-3 md:p-8 flex flex-col gap-5 pb-8">
+
+      <div class="border-b border-outline-variant pb-4">
+        <div class="font-label-mono text-[10px] text-primary-fixed-dim tracking-widest mb-1">EVALUATION COMPLETE — RESULTS DECLASSIFIED</div>
+        <h2 class="font-display-lg text-primary glitch-text" data-text="REVEAL" style="font-size:clamp(28px,5vw,56px)">REVEAL</h2>
+      </div>
+
+      <div class="border border-outline-variant bg-surface-container p-4 md:p-6">
+        <div class="font-label-mono text-[10px] text-primary-fixed-dim mb-2">SYSTEM_OUTPUT.TXT</div>
+        <p id="reveal-text" class="font-terminal-sm text-terminal-sm text-on-surface leading-relaxed">Processing...</p>
+      </div>
+
+      <p id="vote-tally" class="font-label-mono text-label-mono text-on-surface-variant text-[11px]">Processing votes...</p>
+
+      <div id="reveal-cards" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3"></div>
+
+      <div class="flex justify-center mt-4">
+        <button id="play-again-btn" onclick="handlePlayAgain()"
+          class="px-8 py-4 font-headline-md text-headline-md uppercase border border-primary-fixed-dim text-primary-fixed-dim hover:bg-primary/10 hover:border-primary-container hover:text-primary-container transition-all active:translate-y-0.5">
+          INITIATE NEW EVALUATION
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── BOTTOM NAV (mobile) ── -->
+  <nav class="md:hidden fixed bottom-0 left-0 w-full flex justify-around items-center h-16 bg-surface-container-lowest border-t border-primary/30 shadow-[0_-4px_12px_rgba(0,0,0,0.8)] z-[110] font-label-mono text-label-mono">
+    <button class="flex flex-col items-center p-2 text-outline hover:text-primary-fixed-dim">
+      <span class="material-symbols-outlined text-xl">chat_bubble</span>
+      <span class="text-[9px]">CHAT</span>
+    </button>
+    <button class="flex flex-col items-center p-2 text-outline hover:text-primary-fixed-dim">
+      <span class="material-symbols-outlined text-xl">groups</span>
+      <span class="text-[9px]">NODES</span>
+    </button>
+    <button class="flex flex-col items-center p-2 text-outline hover:text-primary-fixed-dim">
+      <span class="material-symbols-outlined text-xl">gavel</span>
+      <span class="text-[9px]">VOTE</span>
+    </button>
+    <button onclick="handleAbort()" class="flex flex-col items-center p-2 text-outline hover:text-error">
+      <span class="material-symbols-outlined text-xl">close</span>
+      <span class="text-[9px]">ABORT</span>
+    </button>
+  </nav>
+
+  <script>
+  // ── GAME CONTENT ──────────────────────────────────────────────────────────
+  const GAME_CONTENT = {
+    roles: {
+      regular:  "You are human. Your objective: identify which node is the synthetic agent. Chat naturally. Probe for inconsistencies. Vote before the session window closes.",
+      paranoid: "You are human — but you're not sure how you feel about that. Something about this session feels off. Maybe it's you. Act natural. Or don't.",
+      robotic:  "You are human, but your assignment is to act like a machine. Clipped sentences. No contractions. No emotion. Get caught — or don't.",
+      humanAI:  "You are a synthetic agent. Blend in. Sound human. The others are trying to identify you. Do not let them."
+    },
+    roleTitles: {
+      regular:  "YOU ARE HUMAN",
+      paranoid: "YOU ARE... HUMAN?",
+      robotic:  "DESIGNATION: HUMAN",
+      humanAI:  "YOU ARE THE AI"
+    },
+    roleIcons: {
+      regular: "face", paranoid: "help", robotic: "smart_toy", humanAI: "android"
+    },
+    reveals: {
+      aiCaught: "CLASSIFICATION COMPLETE. The synthetic node has been identified and flagged. Human integrity: maintained.",
+      aiFooled: "EVALUATION FAILED. The synthetic node successfully infiltrated this session. It walks among you still.",
+      noAI:     "ANOMALY DETECTED. No synthetic node was present in this session. You suspected each other for nothing. Paranoia was the only enemy."
+    },
+    playerNames: ["ALEX","SAM","JORDAN","CASEY","RILEY","MORGAN","QUINN","AVERY"],
+    prompts: [
+      "Describe your earliest memory.",
+      "What's something you pretend to understand but don't?",
+      "What would you do with a free afternoon and no phone?",
+      "What's a food opinion you'd defend to the death?",
+      "What's a skill you have that surprises people?",
+      "Describe the last dream you remember."
+    ]
+  }
+
+  // ── MOCK API ──────────────────────────────────────────────────────────────
+  const MOCK_MODE = true   // flip to false when real backend is running
+  const API_BASE  = 'http://localhost:3000'
+
+  const mockDb = {
+    players: [], messages: [], votes: {},
+    gameStarted: false, claudeIsInRound: false,
+    claudePlayerName: null, currentPrompt: null, roles: {}
+  }
+  let mockAutoInterval = null
+
+  const CANNED = [
+    "idk man that's kind of hard to answer",
+    "yeah i think about that sometimes lol",
+    "ngl i'd probably just eat and watch something",
+    "wait that's actually a good question",
+    "hm. my earliest memory is pretty boring honestly",
+    "lol okay same though",
+    "tbh i don't really remember my dreams",
+    "yeah that tracks i guess",
+    "okay that one's kind of deep",
+    "i mean... fair enough i guess",
+    "my wifi is being weird rn so sorry if i lag",
+    "honestly no idea, i just go with it",
+    "wait really? huh.",
+    "that's kind of embarrassing to admit but yeah",
+    "lol why are you asking me specifically"
+  ]
+
+  function mockHandle(method, path, body) {
+    if (method === 'GET') {
+      if (path === '/status') return { playerCount: mockDb.players.length, gameStarted: mockDb.gameStarted, players: [...mockDb.players], currentPrompt: mockDb.currentPrompt }
+      if (path.startsWith('/my-role')) {
+        const name = new URLSearchParams(path.split('?')[1]).get('name')
+        const role = mockDb.roles[name] || 'regular'
+        return { role, roleText: GAME_CONTENT.roles[role] }
+      }
+      if (path === '/messages') return [...mockDb.messages]
+      if (path === '/reveal')   return mockReveal()
+    }
+    if (method === 'POST') {
+      if (path === '/join') {
+        const name = (body.playerName || '').trim().toUpperCase()
+        if (!name) return { ok: false, error: 'Name required' }
+        if (!mockDb.players.includes(name)) mockDb.players.push(name)
+        // Simulate others joining
+        setTimeout(() => {
+          const others = GAME_CONTENT.playerNames.filter(n => n !== name).slice(0, 3)
+          others.forEach((n, i) => setTimeout(() => { if (!mockDb.players.includes(n)) mockDb.players.push(n) }, (i + 1) * 1400))
+        }, 900)
+        return { ok: true, playerId: name }
+      }
+      if (path === '/start-game') {
+        if (mockDb.gameStarted) return { ok: true }
+        mockDb.claudeIsInRound = Math.random() < 0.6
+        const shuffled = [...mockDb.players].sort(() => Math.random() - 0.5)
+        if (mockDb.claudeIsInRound) {
+          const avail = GAME_CONTENT.playerNames.filter(n => !mockDb.players.includes(n))
+          mockDb.claudePlayerName = avail[0] || 'ECHO'
+          mockDb.roles[shuffled[0]] = 'robotic'
+          for (let i = 1; i < shuffled.length; i++) mockDb.roles[shuffled[i]] = Math.random() < 0.3 ? 'paranoid' : 'regular'
+        } else {
+          mockDb.claudePlayerName = null
+          shuffled.forEach(p => { mockDb.roles[p] = Math.random() < 0.25 ? 'paranoid' : 'regular' })
+        }
+        mockDb.currentPrompt = GAME_CONTENT.prompts[Math.floor(Math.random() * GAME_CONTENT.prompts.length)]
+        mockDb.gameStarted = true
+        mockStartAuto()
+        return { ok: true }
+      }
+      if (path === '/ready') return { ok: true }
+      if (path === '/message') {
+        const { playerName, text } = body
+        if (playerName && text) {
+          mockDb.messages.push({ playerName: playerName.toUpperCase(), text, timestamp: new Date().toISOString() })
+          // Random reply from another node
+          if (Math.random() < 0.55) {
+            const others = [...mockDb.players, ...(mockDb.claudePlayerName ? [mockDb.claudePlayerName] : [])].filter(p => p !== playerName.toUpperCase())
+            if (others.length) {
+              const who = others[Math.floor(Math.random() * others.length)]
+              setTimeout(() => {
+                mockDb.messages.push({ playerName: who, text: CANNED[Math.floor(Math.random() * CANNED.length)], timestamp: new Date().toISOString() })
+              }, 1200 + Math.random() * 2200)
+            }
+          }
+        }
+        return { ok: true }
+      }
+      if (path === '/vote') {
+        const { voter, votedFor } = body
+        if (voter && votedFor) mockDb.votes[voter.toUpperCase()] = votedFor.toUpperCase()
+        return { ok: true }
+      }
+      if (path === '/reset') {
+        Object.assign(mockDb, { players:[], messages:[], votes:{}, gameStarted:false, claudeIsInRound:false, claudePlayerName:null, currentPrompt:null, roles:{} })
+        if (mockAutoInterval) clearInterval(mockAutoInterval)
+        return { ok: true }
+      }
+    }
+    return { ok: true }
+  }
+
+  function mockStartAuto() {
+    if (mockAutoInterval) clearInterval(mockAutoInterval)
+    mockAutoInterval = setInterval(() => {
+      if (!mockDb.gameStarted) return
+      if (Math.random() < 0.28) {
+        const all = [...mockDb.players, ...(mockDb.claudePlayerName ? [mockDb.claudePlayerName] : [])]
+        if (!all.length) return
+        const who = all[Math.floor(Math.random() * all.length)]
+        mockDb.messages.push({ playerName: who, text: CANNED[Math.floor(Math.random() * CANNED.length)], timestamp: new Date().toISOString() })
+      }
+    }, 5000)
+  }
+
+  function mockReveal() {
+    const vc = {}
+    Object.values(mockDb.votes).forEach(v => { vc[v] = (vc[v] || 0) + 1 })
+    const total = Object.values(mockDb.votes).length
+    let outcomeKey = 'noAI'
+    if (mockDb.claudeIsInRound) {
+      const aiV = vc[mockDb.claudePlayerName] || 0
+      outcomeKey = aiV > total / 2 ? 'aiCaught' : 'aiFooled'
+    }
+    const players = mockDb.players.map(p => ({ name: p, role: mockDb.roles[p] || 'regular' }))
+    if (mockDb.claudeIsInRound && mockDb.claudePlayerName) players.push({ name: mockDb.claudePlayerName, role: 'humanAI' })
+    return { aiPlayer: mockDb.claudePlayerName, claudeIsInRound: mockDb.claudeIsInRound, votes: mockDb.votes, voteCounts: vc, players, outcomeKey, outcomeText: GAME_CONTENT.reveals[outcomeKey] }
+  }
+
+  async function api(method, path, body) {
+    if (MOCK_MODE) {
+      return new Promise(res => setTimeout(() => res(mockHandle(method, path, body || {})), 120 + Math.random() * 80))
+    }
+    try {
+      const opts = { method, headers: { 'Content-Type': 'application/json' } }
+      if (body) opts.body = JSON.stringify(body)
+      const r = await fetch(API_BASE + path, opts)
+      if (!r.ok) throw new Error(`HTTP ${r.status}`)
+      return r.json()
+    } catch (e) { showErr(e.message); throw e }
+  }
+
+  // ── GAME STATE ────────────────────────────────────────────────────────────
+  const G = {
+    playerName: '', role: null, players: [],
+    messages: [], lastMsgIdx: 0, selectedVote: null,
+    chatSecs: 240, voteSecs: 30,
+    chatTimer: null, voteTimer: null,
+    statusPoll: null, msgPoll: null,
+    landingPoll: null
+  }
+
+  // ── UTILS ─────────────────────────────────────────────────────────────────
+  function showErr(msg) {
+    document.getElementById('error-msg').textContent = msg
+    document.getElementById('error-banner').classList.remove('hidden')
+    setTimeout(() => document.getElementById('error-banner').classList.add('hidden'), 5000)
+  }
+
+  function esc(t) { const d = document.createElement('div'); d.textContent = t; return d.innerHTML }
+
+  function fmtTime(secs) {
+    return `${String(Math.floor(secs/60)).padStart(2,'0')}:${String(secs%60).padStart(2,'0')}`
+  }
+
+  // ── SCREEN SWITCHING ──────────────────────────────────────────────────────
+  function show(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'))
+    document.getElementById('screen-' + id).classList.add('active')
+
+    const timerOn = ['chat','vote'].includes(id)
+    document.getElementById('header-timer').classList.toggle('hidden', !timerOn)
+    document.getElementById('header-timer').classList.toggle('flex', timerOn)
+
+    const liveOn = ['chat','vote','reveal'].includes(id)
+    document.getElementById('sb-live').classList.toggle('hidden', !liveOn)
+    document.getElementById('sb-live').classList.toggle('flex', liveOn)
+
+    const statuses = { landing:'STATUS: STANDBY', waiting:'STATUS: AWAITING', role:'STATUS: BRIEFING', chat:'STATUS: ACTIVE', vote:'STATUS: VOTING', reveal:'STATUS: COMPLETE' }
+    document.getElementById('sb-status').textContent = statuses[id] || 'STATUS: UNKNOWN'
+  }
+
+  // ── LANDING ───────────────────────────────────────────────────────────────
+  function updateCount(n) {
+    document.getElementById('player-count').textContent = `${n} OF 5`
+    document.getElementById('landing-count').textContent = `${n} / 5`
+    document.getElementById('sb-count').textContent = `${n} / 5 NODES`
+  }
+
+  G.landingPoll = setInterval(async () => {
+    try { const d = await api('GET','/status'); updateCount(d.playerCount||0) } catch(_){}
+  }, 3000)
+
+  async function handleJoin() {
+    const inp = document.getElementById('name-input')
+    const name = inp.value.trim().toUpperCase()
+    if (!name) { inp.focus(); inp.style.borderBottomColor='#ffb4ab'; setTimeout(()=>inp.style.borderBottomColor='',2000); return }
+
+    const btn = document.getElementById('join-btn')
+    btn.textContent = 'CONNECTING...'; btn.disabled = true
+
+    try {
+      const d = await api('POST','/join',{ playerName: name })
+      if (!d.ok) throw new Error(d.error || 'Join failed')
+      G.playerName = name
+      document.getElementById('sb-name').textContent = name
+      clearInterval(G.landingPoll)
+      show('waiting')
+      startWaiting()
+    } catch(e) {
+      showErr(e.message)
+      btn.innerHTML = '<span class="material-symbols-outlined text-sm">login</span>INITIATE LINK'
+      btn.disabled = false
+    }
+  }
+
+  // ── WAITING ───────────────────────────────────────────────────────────────
+  function renderWaitingList(players) {
+    const el = document.getElementById('waiting-list')
+    el.innerHTML = ''
+    players.forEach((name, i) => {
+      const row = document.createElement('div')
+      row.className = 'flex items-center gap-2 py-1'
+      row.innerHTML = `<span class="text-outline font-terminal-sm text-[11px]">[${String(i+1).padStart(2,'0')}]</span><span class="font-terminal-sm text-primary-fixed-dim text-[11px]">&gt; ${name} connected...</span><span class="w-2 h-2 bg-primary-container rounded-full ml-auto shadow-[0_0_5px_#00f2ff] animate-pulse"></span>`
+      el.appendChild(row)
+    })
+    if (players.length < 5) {
+      const row = document.createElement('div')
+      row.className = 'flex gap-2 items-center mt-2 pt-2 border-t border-outline-variant border-dashed opacity-50'
+      row.innerHTML = `<span class="text-primary-fixed-dim font-terminal-sm text-[11px] animate-pulse">&gt; AWAITING ADDITIONAL NODES</span><span class="animate-blink">_</span>`
+      el.appendChild(row)
+    }
+  }
+
+  function startWaiting() {
+    renderWaitingList([G.playerName])
+    G.statusPoll = setInterval(async () => {
+      try {
+        const d = await api('GET','/status')
+        G.players = d.players || []
+        renderWaitingList(G.players)
+        updateCount(G.players.length)
+        document.getElementById('waiting-count').textContent = `${G.players.length} CONNECTED`
+        document.getElementById('start-warn').classList.toggle('hidden', G.players.length >= 2)
+        if (d.gameStarted) { clearInterval(G.statusPoll); fetchRole() }
+      } catch(_){}
+    }, 2000)
+  }
+
+  async function handleStartGame() {
+    const btn = document.getElementById('start-game-btn')
+    btn.textContent = 'INITIALIZING...'; btn.disabled = true
+    try {
+      await api('POST','/start-game',{})
+    } catch(e) {
+      showErr(e.message); btn.textContent = 'START EVALUATION'; btn.disabled = false
+    }
+  }
+
+  // ── ROLE REVEAL ───────────────────────────────────────────────────────────
+  async function fetchRole() {
+    try {
+      const d = await api('GET', `/my-role?name=${encodeURIComponent(G.playerName)}`)
+      G.role = d.role || 'regular'
+      showRole(G.role, d.roleText)
+    } catch(e) { showErr('Failed to load role') }
+  }
+
+  function showRole(role, roleText) {
+    const title = GAME_CONTENT.roleTitles[role] || 'UNKNOWN'
+    const icon  = GAME_CONTENT.roleIcons[role]  || 'help'
+
+    document.getElementById('role-title').textContent = title
+    document.getElementById('role-title').setAttribute('data-text', title)
+    document.getElementById('role-text').textContent = roleText
+    document.getElementById('role-icon').textContent = icon
+    document.getElementById('role-session-id').textContent = Math.random().toString(36).substring(2,8).toUpperCase()
+    document.getElementById('role-text-wrap').classList.remove('hidden')
+    document.getElementById('role-redacted').classList.add('hidden')
+
+    const bg = document.getElementById('role-bg')
+    if (role === 'humanAI') {
+      bg.style.background = 'radial-gradient(circle at center, rgba(255,82,92,0.1) 0%, transparent 70%)'
+      document.getElementById('role-dot').className = 'w-2 h-2 rounded-full animate-pulse bg-error shadow-[0_0_8px_#ff525c]'
+      document.getElementById('role-icon').className = 'material-symbols-outlined text-6xl block text-error shadow-[0_0_20px_rgba(255,82,92,0.5)]'
+      document.getElementById('role-title').className = 'font-display-lg tracking-tighter italic uppercase glitch-text text-error'
+    } else if (role === 'robotic') {
+      bg.style.background = 'radial-gradient(circle at center, rgba(0,219,231,0.07) 0%, transparent 70%)'
+      document.getElementById('role-icon').className = 'material-symbols-outlined text-6xl block text-primary-fixed shadow-[0_0_20px_rgba(0,242,255,0.5)]'
+      document.getElementById('role-title').className = 'font-display-lg tracking-tighter italic uppercase glitch-text text-primary-fixed'
+    } else {
+      bg.style.background = ''
+    }
+
+    show('role')
+    startRoleCountdown()
+  }
+
+  function startRoleCountdown() {
+    let n = 5
+    const el = document.getElementById('role-countdown')
+    el.textContent = n
+    const iv = setInterval(() => {
+      n--; el.textContent = n
+      if (n <= 0) {
+        clearInterval(iv)
+        document.getElementById('role-text-wrap').classList.add('hidden')
+        document.getElementById('role-redacted').classList.remove('hidden')
+        document.getElementById('role-countdown-bar').innerHTML = `<p class="font-headline-md uppercase text-sm text-error">[ BRIEFING REDACTED — PRESS ACKNOWLEDGED ]</p>`
+      }
+    }, 1000)
+  }
+
+  async function handleReady() {
+    try {
+      await api('POST','/ready',{ playerName: G.playerName })
+      show('chat')
+      startChat()
+    } catch(e) { showErr('Failed to acknowledge') }
+  }
+
+  // ── CHAT ──────────────────────────────────────────────────────────────────
+  function startChat() {
+    api('GET','/status').then(d => {
+      if (d.currentPrompt) document.getElementById('game-prompt').textContent = `"${d.currentPrompt}"`
+      G.players = d.players || G.players
+      buildSidebar()
+    })
+
+    G.lastMsgIdx = 0
+    startMsgPoll()
+
+    G.chatSecs = 240
+    updateChatTimer()
+    G.chatTimer = setInterval(() => {
+      G.chatSecs--; updateChatTimer()
+      if (G.chatSecs <= 0) { clearInterval(G.chatTimer); toVote() }
+    }, 1000)
+
+    const inp = document.getElementById('chat-input')
+    inp.addEventListener('keydown', e => { if (e.key === 'Enter') handleSend() })
+    setTimeout(() => inp.focus(), 300)
+  }
+
+  function updateChatTimer() {
+    const t = fmtTime(G.chatSecs)
+    document.getElementById('chat-timer').textContent = t
+    document.getElementById('header-timer-val').textContent = t
+    document.getElementById('chat-timer-bar').style.width = (G.chatSecs / 240 * 100) + '%'
+    if (G.chatSecs <= 30) document.getElementById('chat-timer').classList.add('animate-pulse')
+  }
+
+  function buildSidebar() {
+    const list = document.getElementById('player-sidebar-list')
+    list.innerHTML = ''
+    const all = G.players.length ? G.players : [G.playerName]
+    all.forEach(name => {
+      const el = document.createElement('div')
+      el.className = 'p-2 border border-outline-variant bg-surface-container'
+      el.innerHTML = `<div class="flex items-center gap-2 mb-1"><div class="w-2 h-2 bg-primary-fixed rounded-none animate-pulse shrink-0"></div><span class="font-terminal-sm text-on-surface text-[11px] truncate">${name}${name===G.playerName?' (YOU)':''}</span></div><div class="h-px bg-surface-container-highest w-full relative"><div class="absolute top-0 left-0 h-full bg-error" style="width:${Math.floor(Math.random()*60+10)}%"></div></div>`
+      list.appendChild(el)
+    })
+  }
+
+  function startMsgPoll() {
+    const poll = async () => {
+      try {
+        const msgs = await api('GET','/messages')
+        if (msgs.length > G.lastMsgIdx) {
+          msgs.slice(G.lastMsgIdx).forEach(appendMsg)
+          G.lastMsgIdx = msgs.length
+        }
+      } catch(_){}
+    }
+    poll()
+    G.msgPoll = setInterval(poll, 2000)
+  }
+
+  function appendMsg(msg) {
+    const feed = document.getElementById('message-list')
+    const d = new Date(msg.timestamp)
+    const ts = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`
+    const isMe = msg.playerName.toUpperCase() === G.playerName.toUpperCase()
+    const el = document.createElement('div')
+    el.className = 'flex items-baseline gap-2 flex-wrap'
+    el.innerHTML = `<span class="font-label-mono text-[10px] text-primary-fixed-dim shrink-0">[${ts}]</span><span class="font-terminal-sm font-bold text-[11px] shrink-0 ${isMe?'text-primary-container':'text-on-surface'}">&gt; ${msg.playerName}:</span><span class="font-terminal-sm text-on-surface-variant text-[11px] md:text-sm break-all">${esc(msg.text)}</span>`
+    feed.appendChild(el)
+    feed.scrollTop = feed.scrollHeight
+  }
+
+  async function handleSend() {
+    const inp = document.getElementById('chat-input')
+    const text = inp.value.trim()
+    if (!text) return
+    inp.value = ''; inp.disabled = true
+    try { await api('POST','/message',{ playerName: G.playerName, text }) } catch(_){}
+    inp.disabled = false; inp.focus()
+  }
+
+  function toVote() {
+    clearInterval(G.msgPoll); G.msgPoll = null
+    show('vote')
+    buildVoteGrid()
+    startVoteTimer()
+    document.getElementById('header-timer-val').textContent = '00:30'
+  }
+
+  // ── VOTE ──────────────────────────────────────────────────────────────────
+  function buildVoteGrid() {
+    const grid = document.getElementById('vote-grid')
+    grid.innerHTML = ''
+    const all = G.players.length ? G.players : [G.playerName, 'PLAYER_2', 'PLAYER_3']
+    all.forEach((name, i) => {
+      const isMe = name.toUpperCase() === G.playerName.toUpperCase()
+      const btn = document.createElement('button')
+      btn.className = `vote-card group relative bg-surface-container border border-outline-variant p-4 text-left transition-all flex flex-col justify-between h-28 md:h-32 focus:outline-none${isMe?' opacity-40 cursor-not-allowed':' hover:border-primary-container hover:shadow-[0_0_12px_rgba(0,242,255,0.3)]'}`
+      btn.setAttribute('data-player', name)
+      btn.disabled = isMe
+      const id = Math.random().toString(16).substring(2,8).toUpperCase()
+      btn.innerHTML = isMe
+        ? `<div class="font-label-mono text-[10px] text-on-surface-variant subj-id">SUBJ_${String(i+1).padStart(2,'0')}</div><div><div class="font-headline-md text-primary text-base truncate line-through opacity-50">${name}</div><div class="text-[10px] font-label-mono text-outline mt-1">(SELF — INELIGIBLE)</div></div>`
+        : `<div class="flex justify-between items-start"><div class="font-label-mono text-[10px] text-on-surface-variant group-hover:text-primary-container transition-colors subj-id">SUBJ_${String(i+1).padStart(2,'0')}</div><div class="w-2 h-2 rounded-none bg-primary-fixed"></div></div><div><div class="font-headline-md text-primary text-base md:text-lg truncate">${name}</div><div class="text-[10px] font-label-mono text-outline mt-1">ID: ${id}</div></div>`
+      if (!isMe) btn.addEventListener('click', () => selectVote(name))
+      grid.appendChild(btn)
+    })
+  }
+
+  function selectVote(name) {
+    G.selectedVote = name
+    document.querySelectorAll('.vote-card').forEach(c => c.classList.remove('selected'))
+    const card = document.querySelector(`.vote-card[data-player="${name}"]`)
+    if (card) card.classList.add('selected')
+    document.getElementById('vote-btn').disabled = false
+  }
+
+  function startVoteTimer() {
+    G.voteSecs = 30
+    updateVoteTimer()
+    G.voteTimer = setInterval(() => {
+      G.voteSecs--; updateVoteTimer()
+      if (G.voteSecs <= 0) { clearInterval(G.voteTimer); submitVote() }
+    }, 1000)
+  }
+
+  function updateVoteTimer() {
+    const t = `00:${String(G.voteSecs).padStart(2,'0')}`
+    document.getElementById('vote-timer').textContent = t
+    document.getElementById('header-timer-val').textContent = t
+    if (G.voteSecs <= 10) document.getElementById('vote-timer').classList.add('animate-pulse')
+  }
+
+  async function handleVote() {
+    if (!G.selectedVote) return
+    clearInterval(G.voteTimer)
+    await submitVote()
+  }
+
+  async function submitVote() {
+    const votedFor = G.selectedVote || G.players.find(p => p !== G.playerName) || 'UNKNOWN'
+    try {
+      await api('POST','/vote',{ voter: G.playerName, votedFor })
+      const d = await api('GET','/reveal')
+      showReveal(d)
+    } catch(e) { showErr('Vote submission failed') }
+  }
+
+  // ── REVEAL ────────────────────────────────────────────────────────────────
+  function showReveal(data) {
+    show('reveal')
+    document.getElementById('reveal-text').textContent = data.outcomeText || ''
+
+    const total   = Object.values(data.votes||{}).length
+    const aiVotes = (data.claudeIsInRound && data.aiPlayer) ? (data.voteCounts||{})[data.aiPlayer]||0 : 0
+    document.getElementById('vote-tally').textContent = data.claudeIsInRound
+      ? `${aiVotes} of ${total} subject(s) correctly identified the synthetic node (${data.aiPlayer||'?'}).`
+      : `No synthetic node was present. ${total} subject(s) cast votes.`
+
+    const container = document.getElementById('reveal-cards')
+    container.innerHTML = ''
+
+    ;(data.players||[]).forEach((p, i) => {
+      const card = document.createElement('div')
+      card.className = 'verdict-card border border-outline-variant bg-surface-container p-4 flex flex-col gap-2 opacity-0'
+      const voteCount = (data.voteCounts||{})[p.name]||0
+      card.innerHTML = `<div class="flex justify-between items-start"><span class="font-label-mono text-[10px] text-on-surface-variant">SUBJECT</span>${p.role==='humanAI'?'<span class="font-label-mono text-[9px] text-error border border-error px-1">SYNTHETIC</span>':''}</div><div class="font-headline-md text-primary text-base truncate">${p.name}</div><div class="v-label font-label-mono text-[10px] hidden"></div><div class="font-label-mono text-[10px] text-outline-variant mt-auto">${voteCount} vote(s)</div>`
+      container.appendChild(card)
+
+      setTimeout(() => {
+        card.style.opacity = '1'
+        const label = card.querySelector('.v-label')
+        label.classList.remove('hidden')
+        if (p.role === 'humanAI') {
+          card.classList.add('verdict-ai'); label.textContent = 'DESIGNATION: AI — FLAGGED'
+          document.body.style.backgroundColor = '#1a0505'; setTimeout(()=>document.body.style.backgroundColor='', 200)
+        } else if (p.role === 'robotic') {
+          card.classList.add('verdict-robot'); label.textContent = 'BEHAVIORAL ANOMALY — HUMAN OPERATIVE'
+        } else {
+          card.classList.add('verdict-human'); label.textContent = 'HUMAN — CLEARED'
+        }
+      }, (i + 1) * 800)
+    })
+  }
+
+  async function handlePlayAgain() {
+    try { await api('POST','/reset',{}) } catch(_){}
+    clearInterval(G.chatTimer); clearInterval(G.voteTimer)
+    clearInterval(G.msgPoll);   clearInterval(G.statusPoll)
+    if (mockAutoInterval) clearInterval(mockAutoInterval)
+    location.reload()
+  }
+
+  function handleAbort() {
+    if (confirm('ABORT SESSION?')) location.reload()
+  }
+
+  // ── INIT ──────────────────────────────────────────────────────────────────
+  document.getElementById('name-input').addEventListener('keydown', e => { if (e.key==='Enter') handleJoin() })
+  </script>
+</body>
+</html>
