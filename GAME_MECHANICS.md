@@ -1,12 +1,6 @@
-# Reverse Mafia — Pass the Turing Test
+# Reverse Mafia — How the Backend Works
 
-Everyone is told they might be the AI. One human is secretly instructed to act robotic. One Claude is told to act maximally human. Vote on who's the bot. Twist: sometimes there's no AI at all. Paranoia is the game.
-
----
-
-## How It Works
-
-### 1. Creating a Room
+## 1. Creating a Room
 
 Anyone can create a game room by providing a name for it (like `"friday-game"`), or let the system generate a short random ID automatically. Rooms are independent — multiple games can run at the same time without interfering with each other.
 
@@ -14,7 +8,7 @@ Once created, a room starts in **lobby** phase, waiting for players.
 
 ---
 
-### 2. Starting a Game
+## 2. Starting a Game
 
 When everyone is ready, the host sends a list of player names to start the game. The backend then:
 
@@ -22,7 +16,7 @@ When everyone is ready, the host sends a list of player names to start the game.
 - **Assigns a secret role** to each player and sends it privately — no one sees anyone else's role.
 - **If Claude is playing**, it gets a fake human name (like "Alex" or "Jordan") and is added to the player list as if it were a real person. It also gets assigned a random personality for the round.
 
-#### The four roles
+### The four roles
 
 | Role | What they're told |
 |---|---|
@@ -31,13 +25,13 @@ When everyone is ready, the host sends a list of player names to start the game.
 | **Mole** | You're human. Secretly protect player X at all costs — deflect suspicion toward others, vouch for them. You don't know they're an AI. |
 | **AI (Claude)** | Act as human as possible. If caught, you lose. |
 
-#### Claude's personalities (assigned randomly each round)
+### Claude's personalities (assigned randomly each round)
 
 Anxious, overconfident, philosophical, sarcastic, excessively friendly, or suspicious of everyone.
 
 ---
 
-### 3. Playing (Chat Phase)
+## 3. Playing (Chat Phase)
 
 Players chat freely. The backend supports:
 
@@ -45,7 +39,7 @@ Players chat freely. The backend supports:
 - **Private messages (DMs)** — only the sender and recipient see them. Claude cannot read these.
 - **Accusations** — a player can publicly accuse someone. This is broadcast to the whole room.
 
-#### Claude's stress meter
+### Claude's stress meter
 
 Claude has a hidden stress level (0–100) that rises during the game:
 - Someone **mentions** Claude's fake name in chat → +5
@@ -56,13 +50,13 @@ This stress level is saved and shown at the end of the round, revealing how clos
 
 ---
 
-### 4. Voting Phase
+## 4. Voting Phase
 
 The host moves the game to voting when the chat is over. Each player submits one vote for whoever they think is the AI. Once **everyone has voted**, the game automatically moves to the reveal.
 
 ---
 
-### 5. The Reveal
+## 5. The Reveal
 
 The backend exposes everything:
 
@@ -75,7 +69,7 @@ The backend exposes everything:
 
 ---
 
-### 6. Scoring
+## 6. Scoring
 
 | What happened | Points |
 |---|---|
@@ -90,6 +84,6 @@ Scores accumulate across rounds. The leaderboard tracks total points and each ro
 
 ---
 
-### 7. Next Round
+## 7. Next Round
 
 After the reveal, the host can start a new round. The room resets — new roles, new AI decision, new chat — but **player names and scores carry over**. The game continues until the group decides to stop.
