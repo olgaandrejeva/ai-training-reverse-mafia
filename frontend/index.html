@@ -721,12 +721,13 @@
 
     // New chat message
     G.socket.on('new_message', (msg) => {
-      // Skip internal role-relay messages (sent privately by host with role info)
-      if (msg.isPrivate && typeof msg.text === 'string' && msg.text.startsWith('__ROLE__:')) {
+      // Skip internal role-broadcast (host sends all roles in one public message)
+      if (typeof msg.text === 'string' && msg.text.startsWith('__ROLES__:')) {
         try {
-          const payload = JSON.parse(msg.text.slice(9))
-          G.pendingRole = payload
-          if (payload.allPlayers) G.allPlayers = payload.allPlayers
+          const allRoles = JSON.parse(msg.text.slice(10))
+          const mine = allRoles[G.playerName]
+          if (mine) G.pendingRole = mine
+          if (mine?.allPlayers) G.allPlayers = mine.allPlayers
         } catch (_) {}
         return
       }
@@ -948,22 +949,18 @@
           allPlayers: d.players
         }
 
-        // Relay role info to each other player via private socket message
-        // (they'll parse __ROLE__: prefix and skip displaying it in chat)
+        // Relay all roles in a single public broadcast — each player extracts their own.
+        // The __ROLES__: prefix is filtered from chat display.
+        const rolesPayload = {}
         for (const [pName, roleText] of Object.entries(d.playerInstructions || {})) {
-          if (pName === G.playerName) continue
           const pBackendRole = (d.roles || {})[pName] || 'human'
-          const payload = JSON.stringify({
+          rolesPayload[pName] = {
             role: frontendRoleMap[pBackendRole] || 'regular',
             roleText,
             allPlayers: d.players
-          })
-          G.socket.emit('send_message', {
-            text: `__ROLE__:${payload}`,
-            isPrivate: true,
-            to: pName
-          })
+          }
         }
+        G.socket.emit('send_message', { text: `__ROLES__:${JSON.stringify(rolesPayload)}` })
 
         // Broadcast phase change to all players — backend emits phase_updated { phase: 'playing' }
         // which triggers fetchRole() for everyone (including the host via the socket handler)
