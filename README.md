@@ -93,3 +93,93 @@ Scores accumulate across rounds. The leaderboard tracks total points and each ro
 ### 7. Next Round
 
 After the reveal, the host can start a new round. The room resets — new roles, new AI decision, new chat — but **player names and scores carry over**. The game continues until the group decides to stop.
+
+---
+
+## Running the Game
+
+There are **3 pieces** to run for a full session:
+
+```
+Ollama (port 11434)   ← local LLM
+Backend (port 3000)   ← Express + Socket.io + bot (runs together)
+Frontend              ← index.html opened in the browser
+```
+
+The bot is **not a separate service** — it runs inside the backend automatically.
+
+---
+
+### Step 1 — Ollama (skip if you have an Anthropic API key)
+
+```bash
+# First time: download the model (~2 GB)
+ollama pull llama3.2:3b
+
+# Then leave this running in its own terminal:
+ollama serve
+```
+
+If you have an Anthropic API key, Ollama is not needed — the backend detects the key and uses it automatically.
+
+---
+
+### Step 2 — Backend
+
+```bash
+cd backend
+
+# First time:
+npm install
+
+# Configure your API key (optional — only if using Anthropic):
+cp .env.example .env
+# Edit .env and add your ANTHROPIC_API_KEY
+
+# Start:
+npm run dev
+```
+
+You should see:
+
+```
+Server running on http://localhost:3000
+[claude-bot] started — AI backend: ollama
+```
+
+---
+
+### Step 3 — Frontend
+
+Just open the file in a browser — no build step needed:
+
+```bash
+open frontend/index.html
+```
+
+To simulate multiple players, open the same file in **multiple tabs or browsers**.
+
+---
+
+### Playing a Round
+
+| Step | Who | Action |
+|---|---|---|
+| 1 | All players | Open `index.html`, type an alias, click **INITIATE LINK** |
+| 2 | Everyone | Wait in the lobby — see who has connected |
+| 3 | Any player | Click **START EVALUATION** (minimum 3 players required) |
+| 4 | Each player | See their secret role privately — it disappears after 5 seconds |
+| 5 | Everyone | Chat freely for 4 minutes around the discussion prompt |
+| 6 | Timer hits 0 | Voting opens automatically — 30 seconds to cast your vote |
+| 7 | Everyone votes | Select who you think is the bot |
+| 8 | Reveal | Roles, votes, and outcome are shown — did the AI win? |
+| 9 | Next round | Click **INITIATE NEW EVALUATION** — scores carry over |
+
+---
+
+### Notes
+
+- **All players share the same room** — the frontend uses `ROOM_ID = "default"` for everyone. Just open the same `index.html` and you're in.
+- **The bot joins automatically** — when the backend assigns AI roles (60% chance), the bot starts responding in chat on its own.
+- **Mock mode** — to test the frontend without a running backend, set `MOCK_MODE = true` on line 517 of `index.html`.
+- **Run tests** — `cd backend && npm test`
